@@ -1,0 +1,87 @@
+﻿@{
+    ViewData["Title"] = "BuscaTodos";
+}
+
+<head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+</head>
+
+<h2>Relinton Pinheiro</h2>
+<h2>Controle de Acesso - JWT</h2>
+<hr />
+
+<button type="button" id="login">Login</button>
+<button type="button" id="logout">Logout</button>
+<button type="button" id="exibirDados">Exibir Dados</button>
+<div id="response"></div>
+
+<script>
+    $(document).ready(function () {
+        $("#login").click(function () { });
+        $("#exibirDados").click(function () { });
+        $("#logout").click(function () { });
+    });
+
+    $("#login").click(function () {
+        var options = {};
+        options.url = "https://localhost:44390/api/autenticacao";
+        options.type = "POST";
+        var obj = {};
+        obj.email = "relintonproande@gmail.com";
+        obj.senha = "DevC#";
+        options.data = JSON.stringify(obj);
+        options.contentType = "application/json";
+        options.dataType = "json";
+        options.success = function (data) {
+            sessionStorage.setItem("token", data.token);
+            $("#response").html("<h2>Usuário logado com sucesso.</h2>");
+        };
+        options.error = function (xhr, textStatus, errorThrown) {
+            $("#response").html("<h1>Erro ao chamar a Web API! (" + textStatus + " - " + errorThrown + ")</h1>");
+        };
+        $.ajax(options);
+    });
+
+    $("#exibirDados").click(function () {
+        var options = {};
+        options.url = "https://localhost:44390/api/produto";
+        options.type = "GET";
+        options.beforeSend = function (request) {
+            var token = sessionStorage.getItem("token");
+            if (token) {
+                request.setRequestHeader("Authorization", "Bearer " + token);
+            }
+        };
+
+        options.dataType = "json";
+        options.success = function (data) {
+            var table = "<table border='1' cellpadding='10'>";
+            data.forEach(function (element) {
+                var row = "<tr>";
+                row += "<td>";
+                row += element.id;
+                row += "</td>";
+                row += "<td>";
+                row += element.nome;
+                row += "</td>";
+                row += "</tr>";
+                table += row;
+            });
+            table += "</table>";
+            $("#response").html(table);
+        };
+        options.error = function (xhr, textStatus, errorThrown) {
+            if (xhr.status === 401) {
+                $("#response").html("<h1>Erro de autenticação: token inválido ou expirado.</h1>");
+            } else {
+                $("#response").html("<h1>Erro ao chamar a Web API! (" + textStatus + " - " + errorThrown + ")</h1>");
+            }
+        };
+        $.ajax(options);
+    });
+
+    $("#logout").click(function () {
+        sessionStorage.removeItem("token");
+        $("#response").html("<h2>Usuário realizou o logout com sucesso.</h2>");
+    });
+</script>
